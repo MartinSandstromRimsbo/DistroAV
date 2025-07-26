@@ -1,5 +1,6 @@
 /******************************************************************************
 	Copyright (C) 2016-2024 DistroAV <contact@distroav.org>
+	Modified for MixStage Cast by Martin Sandström
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -22,12 +23,15 @@
 #include "plugin-support.h"
 
 #include "obs-support/obs-app.hpp"
+#include <obs-module.h>
+#include <obs.h>
 
 #include <Processing.NDI.Lib.h>
 
 #define PLUGIN_MIN_QT_VERSION "6.0.0"
 #define PLUGIN_MIN_OBS_VERSION "31.0.0"
 #define PLUGIN_MIN_NDI_VERSION "6.0.0"
+#define PLUGIN_NAME "MixStage NDI"
 
 #define OBS_NDI_ALPHA_FILTER_ID "premultiplied_alpha_filter"
 

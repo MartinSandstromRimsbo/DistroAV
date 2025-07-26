@@ -24,27 +24,17 @@ In some places [nearly] the full code implementation is copied.
 #pragma once
 
 #include "qt_wrapper.hpp"
-
-#include <obs-config.h>
-#include <obs-frontend-api.h>
 #include <obs-module.h>
 
-inline config_t *GetAppConfig()
+// Frontend API not available in MixStage OBS build - return nullptr
+inline void *GetAppConfig()
 {
-#if LIBOBS_API_MAJOR_VER >= 31 // only works at compile time
-	return obs_frontend_get_app_config();
-#else
-	return obs_frontend_get_global_config();
-#endif
+	return nullptr;
 }
 
-inline config_t *GetUserConfig()
+inline void *GetUserConfig()
 {
-#if LIBOBS_API_MAJOR_VER >= 31 // only works at compile time
-	return obs_frontend_get_user_config();
-#else
-	return obs_frontend_get_global_config();
-#endif
+	return nullptr;
 }
 
 // Changed to use obs_module_text instead of ((OBSApp*)App())->GetString

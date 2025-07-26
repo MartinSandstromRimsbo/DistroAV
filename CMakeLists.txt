@@ -1,59 +1,43 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
+# Find Qt6
+find_package(Qt6 COMPONENTS Widgets Core Network REQUIRED)
 
-project(${_name} VERSION ${_version})
-
-option(ENABLE_FRONTEND_API "Use obs-frontend-api for UI functionality" ON)
-option(ENABLE_QT "Use Qt functionality" ON)
-
-include(compilerconfig)
-include(defaults)
-include(helpers)
-
-add_library(${CMAKE_PROJECT_NAME} MODULE)
-
-find_package(libobs REQUIRED)
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
-
+# Find CURL
 find_package(CURL REQUIRED)
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE CURL::libcurl)
 
-if(ENABLE_FRONTEND_API)
-  find_package(obs-frontend-api REQUIRED)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::obs-frontend-api)
+# Find NDI - temporarily make it optional for testing
+find_library(NDI_LIBRARY NAMES NDIlib NDI PATHS /usr/local/lib /opt/homebrew/lib)
+if(NOT NDI_LIBRARY)
+    message(WARNING "NDI library not found. Plugin will be built without NDI support.")
+    set(NDI_LIBRARY "")
 endif()
 
-if(ENABLE_QT)
-  find_package(Qt6 COMPONENTS Widgets Core Network)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Qt6::Core Qt6::Widgets Qt6::Network)
-  target_compile_options(
-    ${CMAKE_PROJECT_NAME}
-    PRIVATE $<$<C_COMPILER_ID:Clang,AppleClang>:-Wno-quoted-include-in-framework-header -Wno-comma>
-  )
-  set_target_properties(
-    ${CMAKE_PROJECT_NAME}
-    PROPERTIES AUTOMOC ON AUTOUIC ON AUTORCC ON
-  )
-endif()
+# Create the plugin library
+add_library(distroav MODULE)
 
-target_sources(
-  ${CMAKE_PROJECT_NAME}
-  PRIVATE
-    src/forms/output-settings.cpp
-    src/forms/output-settings.h
-    src/forms/update.cpp
-    src/forms/update.h
+# Set Qt properties
+set_target_properties(distroav PROPERTIES
+    AUTOMOC ON
+    AUTOUIC ON
+    AUTORCC ON
+)
+
+# Configure plugin-support.c from template
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plugin-support.c.in
+    ${CMAKE_CURRENT_BINARY_DIR}/plugin-support.c
+    @ONLY
+)
+
+# Add only core NDI source files (excluding UI components that need frontend API)
+target_sources(distroav PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/plugin-support.c
     src/obs-support/obs-app.hpp
     src/obs-support/remote-text.cpp
     src/obs-support/remote-text.hpp
     src/obs-support/shared-update.cpp
     src/obs-support/shared-update.hpp
-    src/config.cpp
-    src/config.h
-    src/main-output.cpp
-    src/main-output.h
-    src/ndi-filter.cpp
     src/ndi-finder.h
     src/ndi-finder.cpp
     src/ndi-output.cpp
@@ -61,19 +45,51 @@ target_sources(
     src/plugin-main.cpp
     src/plugin-main.h
     src/premultiplied-alpha-filter.cpp
-    src/preview-output.cpp
-    src/preview-output.h
 )
 
-set(valid_uuid FALSE)
-check_uuid(${WINDOWS_APP_UUID} valid_uuid)
-if(NOT valid_uuid)
-  message(FATAL_ERROR "Specified Windows package UUID is not a valid UUID value: ${WINDOWS_APP_UUID}")
+# Link libraries
+target_link_libraries(distroav PRIVATE
+    OBS::libobs
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Network
+    CURL::libcurl
+)
+
+# Only link NDI if found
+if(NDI_LIBRARY)
+    target_link_libraries(distroav PRIVATE ${NDI_LIBRARY})
 endif()
 
-configure_file(
-  cmake/windows/resources/installer-Windows.iss.in
-  "${CMAKE_CURRENT_BINARY_DIR}/installer-Windows.generated.iss"
+# Include directories
+target_include_directories(distroav PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/ndi
+    /usr/local/include
+    /opt/homebrew/include
 )
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/lib/ndi)
-set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
+
+# Set output name
+set_target_properties(distroav PROPERTIES OUTPUT_NAME "distroav")
+
+# Set OBS target properties
+set_target_properties_obs(distroav PROPERTIES FOLDER plugins PREFIX "")
+
+# --- macOS plugin bundle settings ---
+if(APPLE)
+    set_target_properties(distroav PROPERTIES
+        BUNDLE TRUE
+        BUNDLE_EXTENSION "plugin"
+        OUTPUT_NAME "distroav"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Debug"
+    )
+                    add_custom_command(TARGET distroav POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                        "$<TARGET_BUNDLE_DIR:distroav>"
+                        "${CMAKE_BINARY_DIR}/frontend/plugins/distroav.plugin"
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "/usr/local/lib/libndi.dylib"
+                        "${CMAKE_BINARY_DIR}/frontend/Debug/MixStageCast.app/Contents/Frameworks/libndi.dylib"
+                    COMMENT "Copying distroav.plugin bundle and NDI library to MixStage Cast"
+                )
+endif()

@@ -86,11 +86,8 @@ QString GetProgramGUID()
 	 * Windows: %APPDATA%\obs-studio\global.ini
 	 */
 
-	QString guid = config_get_string(GetAppConfig(), "General", "InstallGUID");
-	if (guid.isEmpty()) {
-		GenerateGUID(guid);
-		if (!guid.isEmpty())
-			config_set_string(GetAppConfig(), "General", "InstallGUID", QT_TO_UTF8(guid));
-	}
+	// Frontend API not available in MixStage OBS build - generate a new GUID each time
+	QString guid;
+	GenerateGUID(guid);
 	return guid;
 }
