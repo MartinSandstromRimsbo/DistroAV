@@ -56,7 +56,7 @@ typedef struct {
 
 const char *ndi_filter_getname(void *)
 {
-	return obs_module_text("NDIPlugin.FilterName");
+	return "MixStage NDI Filter";
 }
 
 const char *ndi_audiofilter_getname(void *)
@@ -72,13 +72,13 @@ obs_properties_t *ndi_filter_getproperties(void *)
 	obs_properties_t *props = obs_properties_create();
 	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
 
-	obs_properties_add_text(props, FLT_PROP_NAME, obs_module_text("NDIPlugin.FilterProps.NDIName"),
+	obs_properties_add_text(props, FLT_PROP_NAME, "NDI Name",
 				OBS_TEXT_DEFAULT);
 
-	obs_properties_add_text(props, FLT_PROP_GROUPS, obs_module_text("NDIPlugin.FilterProps.NDIGroups"),
+	obs_properties_add_text(props, FLT_PROP_GROUPS, "NDI Groups",
 				OBS_TEXT_DEFAULT);
 
-	obs_properties_add_button(props, "ndi_apply", obs_module_text("NDIPlugin.FilterProps.ApplySettings"),
+	obs_properties_add_button(props, "ndi_apply", "Apply Settings",
 				  [](obs_properties_t *, obs_property_t *, void *private_data) {
 					  auto s = (ndi_filter_t *)private_data;
 					  auto settings = obs_source_get_settings(s->obs_source);
@@ -102,7 +102,7 @@ obs_properties_t *ndi_filter_getproperties(void *)
 void ndi_filter_getdefaults(obs_data_t *defaults)
 {
 	obs_log(LOG_DEBUG, "+ndi_filter_getdefaults(...)");
-	obs_data_set_default_string(defaults, FLT_PROP_NAME, obs_module_text("NDIPlugin.FilterProps.NDIName.Default"));
+	obs_data_set_default_string(defaults, FLT_PROP_NAME, "MixStage NDI Filter");
 	obs_data_set_default_string(defaults, FLT_PROP_GROUPS, "");
 	obs_log(LOG_DEBUG, "-ndi_filter_getdefaults(...)");
 }

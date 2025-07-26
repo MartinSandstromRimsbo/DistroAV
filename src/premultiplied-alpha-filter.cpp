@@ -24,7 +24,7 @@ struct alpha_filter {
 
 const char *alpha_filter_getname(void *)
 {
-	return obs_module_text("NDIPlugin.PremultipliedAlphaFilterName");
+	return "MixStage NDI Alpha Filter";
 }
 
 obs_properties_t *alpha_filter_getproperties(void *)

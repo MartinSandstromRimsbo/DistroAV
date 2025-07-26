@@ -195,7 +195,7 @@ static video_range_type prop_to_range_type(int index)
 
 const char *ndi_source_getname(void *)
 {
-	return obs_module_text("NDIPlugin.NDISourceName");
+	return "MixStage NDI Source";
 }
 
 obs_properties_t *ndi_source_getproperties(void *data)
@@ -206,7 +206,7 @@ obs_properties_t *ndi_source_getproperties(void *data)
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *source_list = obs_properties_add_list(props, PROP_SOURCE,
-							      obs_module_text("NDIPlugin.SourceProps.SourceName"),
+							      "Source Name",
 							      OBS_COMBO_TYPE_EDITABLE, OBS_COMBO_FORMAT_STRING);
 	NDIFinder finder;
 	// Create a callback that is called when the NDI source list is complete
@@ -223,21 +223,21 @@ obs_properties_t *ndi_source_getproperties(void *data)
 	}
 
 	obs_property_t *behavior_list = obs_properties_add_list(props, PROP_BEHAVIOR,
-								obs_module_text("NDIPlugin.SourceProps.Behavior"),
+								"Behavior",
 								OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(behavior_list, obs_module_text("NDIPlugin.SourceProps.Behavior.KeepActive"),
+	obs_property_list_add_int(behavior_list, "Keep Active",
 				  PROP_BEHAVIOR_KEEP_ACTIVE);
-	obs_property_list_add_int(behavior_list, obs_module_text("NDIPlugin.SourceProps.Behavior.StopResumeBlank"),
+	obs_property_list_add_int(behavior_list, "Stop/Resume (Blank)",
 				  PROP_BEHAVIOR_STOP_RESUME_BLANK);
-	obs_property_list_add_int(behavior_list, obs_module_text("NDIPlugin.SourceProps.Behavior.StopResumeLastFrame"),
+	obs_property_list_add_int(behavior_list, "Stop/Resume (Last Frame)",
 				  PROP_BEHAVIOR_STOP_RESUME_LAST_FRAME);
 
 	obs_property_t *bw_modes = obs_properties_add_list(props, PROP_BANDWIDTH,
-							   obs_module_text("NDIPlugin.SourceProps.Bandwidth"),
+							   "Bandwidth",
 							   OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(bw_modes, obs_module_text("NDIPlugin.BWMode.Highest"), PROP_BW_HIGHEST);
-	obs_property_list_add_int(bw_modes, obs_module_text("NDIPlugin.BWMode.Lowest"), PROP_BW_LOWEST);
-	obs_property_list_add_int(bw_modes, obs_module_text("NDIPlugin.BWMode.AudioOnly"), PROP_BW_AUDIO_ONLY);
+	obs_property_list_add_int(bw_modes, "Highest", PROP_BW_HIGHEST);
+	obs_property_list_add_int(bw_modes, "Lowest", PROP_BW_LOWEST);
+	obs_property_list_add_int(bw_modes, "Audio Only", PROP_BW_AUDIO_ONLY);
 	obs_property_set_modified_callback(bw_modes, [](obs_properties_t *props_, obs_property_t *,
 							obs_data_t *settings_) {
 		bool is_audio_only = (obs_data_get_int(settings_, PROP_BANDWIDTH) == PROP_BW_AUDIO_ONLY);
@@ -252,54 +252,54 @@ obs_properties_t *ndi_source_getproperties(void *data)
 	});
 
 	obs_property_t *sync_modes = obs_properties_add_list(props, PROP_SYNC,
-							     obs_module_text("NDIPlugin.SourceProps.Sync"),
+							     "Sync",
 							     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(sync_modes, obs_module_text("NDIPlugin.SyncMode.NDITimestamp"),
+	obs_property_list_add_int(sync_modes, "NDI Timestamp",
 				  PROP_SYNC_NDI_TIMESTAMP);
-	obs_property_list_add_int(sync_modes, obs_module_text("NDIPlugin.SyncMode.NDISourceTimecode"),
+	obs_property_list_add_int(sync_modes, "NDI Source Timecode",
 				  PROP_SYNC_NDI_SOURCE_TIMECODE);
 
-	obs_properties_add_bool(props, PROP_FRAMESYNC, obs_module_text("NDIPlugin.NDIFrameSync"));
+	obs_properties_add_bool(props, PROP_FRAMESYNC, "Frame Sync");
 
-	obs_properties_add_bool(props, PROP_HW_ACCEL, obs_module_text("NDIPlugin.SourceProps.HWAccel"));
+	obs_properties_add_bool(props, PROP_HW_ACCEL, "Hardware Acceleration");
 
-	obs_properties_add_bool(props, PROP_FIX_ALPHA, obs_module_text("NDIPlugin.SourceProps.AlphaBlendingFix"));
+	obs_properties_add_bool(props, PROP_FIX_ALPHA, "Alpha Blending Fix");
 
 	obs_property_t *yuv_ranges = obs_properties_add_list(props, PROP_YUV_RANGE,
-							     obs_module_text("NDIPlugin.SourceProps.ColorRange"),
+							     "Color Range",
 							     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(yuv_ranges, obs_module_text("NDIPlugin.SourceProps.ColorRange.Partial"),
+	obs_property_list_add_int(yuv_ranges, "Partial",
 				  PROP_YUV_RANGE_PARTIAL);
-	obs_property_list_add_int(yuv_ranges, obs_module_text("NDIPlugin.SourceProps.ColorRange.Full"),
+	obs_property_list_add_int(yuv_ranges, "Full",
 				  PROP_YUV_RANGE_FULL);
 
 	obs_property_t *yuv_spaces = obs_properties_add_list(props, PROP_YUV_COLORSPACE,
-							     obs_module_text("NDIPlugin.SourceProps.ColorSpace"),
+							     "Color Space",
 							     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(yuv_spaces, "BT.709", PROP_YUV_SPACE_BT709);
 	obs_property_list_add_int(yuv_spaces, "BT.601", PROP_YUV_SPACE_BT601);
 
 	obs_property_t *latency_modes = obs_properties_add_list(props, PROP_LATENCY,
-								obs_module_text("NDIPlugin.SourceProps.Latency"),
+								"Latency",
 								OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(latency_modes, obs_module_text("NDIPlugin.SourceProps.Latency.Normal"),
+	obs_property_list_add_int(latency_modes, "Normal",
 				  PROP_LATENCY_NORMAL);
-	obs_property_list_add_int(latency_modes, obs_module_text("NDIPlugin.SourceProps.Latency.Low"),
+	obs_property_list_add_int(latency_modes, "Low",
 				  PROP_LATENCY_LOW);
-	obs_property_list_add_int(latency_modes, obs_module_text("NDIPlugin.SourceProps.Latency.Lowest"),
+	obs_property_list_add_int(latency_modes, "Lowest",
 				  PROP_LATENCY_LOWEST);
 
-	obs_properties_add_bool(props, PROP_AUDIO, obs_module_text("NDIPlugin.SourceProps.Audio"));
+	obs_properties_add_bool(props, PROP_AUDIO, "Audio");
 
-	obs_properties_t *group_ptz = obs_properties_create();
-	obs_properties_add_float_slider(group_ptz, PROP_PAN, obs_module_text("NDIPlugin.SourceProps.Pan"), -1.0, 1.0,
+		obs_properties_t *group_ptz = obs_properties_create();
+	obs_properties_add_float_slider(group_ptz, PROP_PAN, "Pan", -1.0, 1.0,
 					0.001);
-	obs_properties_add_float_slider(group_ptz, PROP_TILT, obs_module_text("NDIPlugin.SourceProps.Tilt"), -1.0, 1.0,
+	obs_properties_add_float_slider(group_ptz, PROP_TILT, "Tilt", -1.0, 1.0,
 					0.001);
-	obs_properties_add_float_slider(group_ptz, PROP_ZOOM, obs_module_text("NDIPlugin.SourceProps.Zoom"), 0.0, 1.0,
+	obs_properties_add_float_slider(group_ptz, PROP_ZOOM, "Zoom", 0.0, 1.0,
 					0.001);
-	obs_properties_add_group(props, PROP_PTZ, obs_module_text("NDIPlugin.SourceProps.PTZ"), OBS_GROUP_CHECKABLE,
-				 group_ptz);
+	obs_properties_add_group(props, PROP_PTZ, "PTZ Controls", OBS_GROUP_CHECKABLE,
+				group_ptz);
 
 	auto group_ndi = obs_properties_create();
 	obs_properties_add_button(group_ndi, "ndi_website", NDI_OFFICIAL_WEB_URL,

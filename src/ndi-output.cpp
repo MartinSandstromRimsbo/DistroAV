@@ -82,7 +82,7 @@ typedef struct {
 
 const char *ndi_output_getname(void *)
 {
-	return obs_module_text("NDIPlugin.OutputName");
+	return "MixStage NDI Output";
 }
 
 obs_properties_t *ndi_output_getproperties(void *)
@@ -92,8 +92,8 @@ obs_properties_t *ndi_output_getproperties(void *)
 	obs_properties_t *props = obs_properties_create();
 	obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
 
-	obs_properties_add_text(props, "ndi_name", obs_module_text("NDIPlugin.OutputProps.NDIName"), OBS_TEXT_DEFAULT);
-	obs_properties_add_text(props, "ndi_groups", obs_module_text("NDIPlugin.OutputProps.NDIGroups"),
+	obs_properties_add_text(props, "ndi_name", "NDI Name", OBS_TEXT_DEFAULT);
+	obs_properties_add_text(props, "ndi_groups", "NDI Groups",
 				OBS_TEXT_DEFAULT);
 
 	obs_log(LOG_DEBUG, "-ndi_output_getproperties()");
