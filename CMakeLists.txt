@@ -87,9 +87,10 @@ if(APPLE)
                     COMMAND ${CMAKE_COMMAND} -E copy_directory
                         "$<TARGET_BUNDLE_DIR:distroav>"
                         "${CMAKE_BINARY_DIR}/frontend/plugins/distroav.plugin"
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                        "/usr/local/lib/libndi.dylib"
-                        "${CMAKE_BINARY_DIR}/frontend/Debug/MixStageCast.app/Contents/Frameworks/libndi.dylib"
-                    COMMENT "Copying distroav.plugin bundle and NDI library to MixStage Cast"
+                    # NDI library not copied - users must install NDI SDK separately for license compliance
+                    # COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    #     "/usr/local/lib/libndi.dylib"
+                    #     "${CMAKE_BINARY_DIR}/frontend/Debug/MixStageCast.app/Contents/Frameworks/libndi.dylib"
+                    COMMENT "Copying distroav.plugin bundle to MixStage Cast (NDI runtime dependency)"
                 )
 endif()
