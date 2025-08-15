@@ -26,6 +26,11 @@
 #include <QDir>
 #include <QLibrary>
 #include <QRegularExpression>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QDesktopServices>
+#include <QUrl>
+#include <QCoreApplication>
 
 OBS_DECLARE_MODULE()
 
@@ -133,11 +138,27 @@ bool obs_module_load(void)
 	obs_log(LOG_DEBUG, "+obs_module_load()");
 
 	// Load NDI library
-	ndiLib = load_ndilib();
-	if (!ndiLib) {
-		obs_log(LOG_ERROR, "ERR-401 - NDI library failed to load. Please install NDI Runtime >= 6.0.0");
-		return false;
-	}
+    ndiLib = load_ndilib();
+    if (!ndiLib) {
+        obs_log(LOG_ERROR, "ERR-401 - NDI library failed to load. Please install NDI Runtime >= 6.0.0");
+        // Friendly prompt: offer to open official download, or continue without NDI
+        const QString title = QString::fromUtf8("NDI Runtime not found");
+        const QString text = QString::fromUtf8(
+            "NDI Runtime (v6+) was not found on this system.\n\n"
+            "- Install to enable NDI Sources/Outputs\n"
+            "- Or continue without NDI")
+                ;
+        QMessageBox box(QMessageBox::Warning, title, text, QMessageBox::NoButton);
+        QPushButton *installBtn = box.addButton(QString::fromUtf8("Open NDI Download"), QMessageBox::AcceptRole);
+        box.addButton(QString::fromUtf8("Continue without NDI"), QMessageBox::RejectRole);
+        box.setDefaultButton(installBtn);
+        box.exec();
+        if (box.clickedButton() == installBtn) {
+            QDesktopServices::openUrl(QUrl(QString::fromUtf8(NDI_OFFICIAL_WEB_URL)));
+        }
+        // Skip loading the plugin (app continues to run without NDI)
+        return false;
+    }
 
 	// Initialize NDI
 	auto initialized = ndiLib->initialize();
@@ -198,11 +219,28 @@ void obs_module_unload(void)
 
 const NDIlib_v6 *load_ndilib()
 {
-	auto locations = QStringList();
-	auto temp_path = QString(qgetenv(NDILIB_REDIST_FOLDER));
-	if (!temp_path.isEmpty()) {
-		locations << temp_path;
-	}
+    auto locations = QStringList();
+
+    // 0) Prefer the app's bundled Frameworks so Finder launches work when bundled
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QString frameworksDir = QDir::cleanPath(appDir + "/../Frameworks");
+    locations << frameworksDir;
+
+    // 1) Honor NDI v6 official runtime env var
+    {
+        const QByteArray v6 = qgetenv("NDI_RUNTIME_DIR_V6");
+        if (!v6.isEmpty()) {
+            locations << QString::fromUtf8(v6);
+        }
+    }
+
+    // 2) Legacy env var used by some setups
+    {
+        const QByteArray redist = qgetenv("NDILIB_REDIST_FOLDER");
+        if (!redist.isEmpty()) {
+            locations << QString::fromUtf8(redist);
+        }
+    }
 #if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
 	// Linux, MacOS
 	// https://github.com/DistroAV/DistroAV/blob/master/lib/ndi/NDI%20SDK%20Documentation.pdf
@@ -215,13 +253,18 @@ const NDIlib_v6 *load_ndilib()
 	locations << "/app/plugins/DistroAV/extra/lib";
 #endif
 #endif
-	auto lib_path = QString();
+    auto lib_path = QString();
 #if defined(Q_OS_LINUX)
 	// Linux
 	auto regex = QRegularExpression("libndi\\.so\\.(\\d+)");
 	int max_version = 0;
 #endif
-	for (const auto &location : locations) {
+    // Well-known macOS install locations for the official NDI SDK
+    locations << "/Library/NDI SDK for Apple/lib";
+    locations << "/Library/NDI/lib";
+    locations << "/opt/homebrew/opt/libndi/lib"; // Homebrew fallback
+
+    for (const auto &location : locations) {
 		auto dir = QDir(location);
 #if defined(Q_OS_LINUX)
 		// Linux
@@ -240,7 +283,7 @@ const NDIlib_v6 *load_ndilib()
 		}
 #else
 		// MacOS, Windows
-		temp_path = QDir::cleanPath(dir.absoluteFilePath(NDILIB_LIBRARY_NAME));
+        auto temp_path = QDir::cleanPath(dir.absoluteFilePath(NDILIB_LIBRARY_NAME));
 		obs_log(LOG_DEBUG, "load_ndilib: Trying '%s'", QT_TO_UTF8(QDir::toNativeSeparators(temp_path)));
 		auto file_info = QFileInfo(temp_path);
 		if (file_info.exists() && file_info.isFile()) {

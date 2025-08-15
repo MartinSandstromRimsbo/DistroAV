@@ -6,12 +6,8 @@ find_package(Qt6 COMPONENTS Widgets Core Network REQUIRED)
 # Find CURL
 find_package(CURL REQUIRED)
 
-# Find NDI - temporarily make it optional for testing
-find_library(NDI_LIBRARY NAMES NDIlib NDI PATHS /usr/local/lib /opt/homebrew/lib)
-if(NOT NDI_LIBRARY)
-    message(WARNING "NDI library not found. Plugin will be built without NDI support.")
-    set(NDI_LIBRARY "")
-endif()
+# NDI: do not bundle in build; resolve at runtime via load_ndilib()
+set(NDI_LIBRARY "")
 
 # Create the plugin library
 add_library(distroav MODULE)
@@ -56,10 +52,7 @@ target_link_libraries(distroav PRIVATE
     CURL::libcurl
 )
 
-# Only link NDI if found
-if(NDI_LIBRARY)
-    target_link_libraries(distroav PRIVATE ${NDI_LIBRARY})
-endif()
+# Do not link NDI here; runtime `QLibrary` loads it from system SDK or app Frameworks
 
 # Include directories
 target_include_directories(distroav PRIVATE
@@ -81,15 +74,12 @@ if(APPLE)
         BUNDLE TRUE
         BUNDLE_EXTENSION "plugin"
         OUTPUT_NAME "distroav"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Debug"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>"
     )
-                    add_custom_command(TARGET distroav POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                        "$<TARGET_BUNDLE_DIR:distroav>"
-                        "${CMAKE_BINARY_DIR}/frontend/plugins/distroav.plugin"
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                        "/usr/local/lib/libndi.dylib"
-                        "${CMAKE_BINARY_DIR}/frontend/Debug/MixStageCast.app/Contents/Frameworks/libndi.dylib"
-                    COMMENT "Copying distroav.plugin bundle and NDI library to MixStage Cast"
-                )
+    add_custom_command(TARGET distroav POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+              "$<TARGET_BUNDLE_DIR:distroav>"
+              "${CMAKE_BINARY_DIR}/frontend/$<CONFIG>/MixStageCast.app/Contents/PlugIns/distroav.plugin"
+      COMMENT "Copying distroav.plugin into app bundle (no NDI bundling)"
+    )
 endif()
